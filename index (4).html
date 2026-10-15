@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مُحمّل ملفات منصة المسّاح الرقمي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .box {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 650px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        h1 { color: #38bdf8; margin-bottom: 10px; font-size: 1.5rem; }
+        p { color: #cbd5e1; font-size: 0.95rem; line-height: 1.7; margin-bottom: 20px; }
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            font-family: 'Cairo', sans-serif;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-file {
+            background: #0f172a;
+            color: #38bdf8;
+            border: 1px solid #38bdf8;
+        }
+        .btn-file:hover { background: #38bdf8; color: #0f172a; }
+        .btn-all {
+            background: #10b981;
+            color: #ffffff;
+            width: 100%;
+            font-size: 1.1rem;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        .btn-all:hover { background: #059669; }
+        .note {
+            margin-top: 15px;
+            font-size: 0.82rem;
+            color: #94a3b8;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h1>📐 حزمة ملفات منصة المسّاح الرقمي المتكاملة (PWA)</h1>
+    <p>اضغط على الزر الأخضر بالأسفل لتحميل جميع ملفات الموقع منفصلة وجاهزة للرفع مباشرة بدون الحاجة لنسخ الأكواد يدوياً:</p>
+
+    <div class="files-grid">
+        <button class="btn-file" onclick="downloadSingle('index.html')">📄 تحميل index.html</button>
+        <button class="btn-file" onclick="downloadSingle('style.css')">🎨 تحميل style.css</button>
+        <button class="btn-file" onclick="downloadSingle('app.js')">⚙️ تحميل app.js</button>
+        <button class="btn-file" onclick="downloadSingle('manifest.json')">📱 تحميل manifest.json</button>
+        <button class="btn-file" onclick="downloadSingle('sw.js')">⚡ تحميل sw.js</button>
+    </div>
+
+    <button class="btn-all" onclick="downloadAllFiles()">📦 تحميل جميع ملفات المشروع دفعة واحدة (5 ملفات)</button>
+
+    <div class="note">
+        💡 ضع الملفات الخمسة في مجلد واحد، وعند فتح الموقع من متصفح Chrome ستظهر لك أيقونة <b>تثبيت التطبيق (Install App)</b> ليعمل كتطبيق مستقل على الهاتف أو الكمبيوتر مع حفظ تلقائي لجميع بياناتك.
+    </div>
+</div>
+
+<script>
+// ================= 1. محتوى ملف index.html =================
+const INDEX_HTML = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
+    <title>المسّاح الرقمي المتكامل - بوابة الهندسة والمساحة</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- الشريط العلوي الثابت -->
+    <header class="app-header">
+        <div class="brand" onclick="openTool('home')" style="cursor:pointer;">
+            <span class="brand-icon">📐</span>
+            <div>
+                <h1>المسّاح الرقمي المتكامل</h1>
+                <small>القياس، الفرز الشرعي، الكروكي، وتصميم الأوتوكاد</small>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button id="installPwaBtn" class="btn-install" style="display:none;" onclick="installPWA()">📲 تثبيت التطبيق</button>
+            <button class="btn-home" onclick="openTool('home')">🏠 الرئيسية (الأدوات)</button>
+        </div>
+    </header>
+
+    <!-- الشاشة الرئيسية: شبكة أيقونات الأدوات (تظهر افتراضياً وتختفي الخريطة حتى يضغط عليها المستخدم) -->
+    <main id="tool-home" class="tool-view active">
+        <div class="hero-banner">
+            <h2>اختر الأداة الهندسية أو المساحية للبدء</h2>
+            <p>جميع بياناتك وأرقامك يتم حفظها تلقائياً على جهازك حتى بعد إغلاق المتصفح</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="tool-card" onclick="openTool('sketch')">
+                <div class="tool-icon">📏</div>
+                <h3>رسم الكروكي والفرز الشرعي</h3>
+                <p>حساب الأضلاع الـ 4 والوتر، رسم الكروكي بالأوفست والجيران، وتقسيم المواريث الشرعي (للذكر مثل حظ الأنثيين).</p>
+                <span class="card-action">فتح أداة الكروكي ←</span>
+            </div>
+
+            <div class="tool-card" onclick="openTool('cad')">
+                <div class="tool-icon">🏠</div>
+                <h3>مصمم الأوتوكاد الذكي (4 أضلاع)</h3>
+                <p>إدخال الأضلاع الأربعة (فوق، تحت، يمين، شمال) وتوليد مسقط أفقي لمنزل مصري وتصدير ملف DXF للأوتوكاد.</p>
+                <span class="card-action">فتح مصمم CAD ←</span>
+            </div>
+
+            <div class="tool-card" onclick="openTool('map')">
+                <div class="tool-icon">🗺️</div>
+                <h3>حساب المساحة بالخريطة و UTM</h3>
+                <p>رفع الأراضي من القمر الصناعي، تحريك النقاط، حساب الفدان والقيراط والسهم، واستخراج إحداثيات UTM.</p>
+                <span class="card-action">فتح الخريطة التفاعلية ←</span>
+            </div>
+
+            <div class="tool-card" onclick="openTool('leveling')">
+                <div class="tool-icon">🔭</div>
+                <h3>دفتر الميزانية الشبكية والطولية</h3>
+                <p>حساب منسوب سطح الميزان (HI) والمناسيب النهائية للنقاط وفروق الارتفاعات والانخفاضات وتصدير التقرير.</p>
+                <span class="card-action">فتح دفتر الميزانية ←</span>
+            </div>
+
+            <div class="tool-card" onclick="openTool('cogo')">
+                <div class="tool-icon">🧭</div>
+                <h3>حاسبة الإحداثيات والانحراف COGO</h3>
+                <p>حساب المسافة والانحراف الدائري بين نقطتين، أو حساب إحداثيات نقطة مجهولة بمعلومية زاوية ومسافة.</p>
+                <span class="card-action">فتح حاسبة COGO ←</span>
+            </div>
+
+            <div class="tool-card" onclick="openTool('converter')">
+                <div class="tool-icon">⚖️</div>
+                <h3>محول الوحدات المساحية والزراعية</h3>
+                <p>التحويل الفوري بين المتر المربع، الفدان، القيراط، السهم، الهكتار، القصبة، والدونم بدقة مساحية.</p>
+                <span class="card-action">فتح محول الوحدات ←</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- الأداة 1: الكروكي المساحي والفرز الشرعي -->
+    <section id="tool-sketch" class="tool-view">
+        <div class="split-layout">
+            <div class="control-panel">
+                <div class="card">
+                    <div class="card-title">1. أضلاع الأرض الأربعة والوتر (بالمتر)</div>
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label>الضلع العلوي (بحري/فوق):</label>
+                            <input type="number" id="side-n" value="40" step="any" oninput="autoCalcDiagonalSketch()">
+                        </div>
+                        <div class="input-group">
+                            <label>الضلع السفلي (قبلي/تحت):</label>
+                            <input type="number" id="side-s" value="40" step="any" oninput="autoCalcDiagonalSketch()">
+                        </div>
+                        <div class="input-group">
+                            <label>الضلع الأيمن (شرقي/يمين):</label>
+                            <input type="number" id="side-e" value="20" step="any" oninput="autoCalcDiagonalSketch()">
+                        </div>
+                        <div class="input-group">
+                            <label>الضلع الأيسر (غربي/شمال):</label>
+                            <input type="number" id="side-w" value="20" step="any" oninput="autoCalcDiagonalSketch()">
+                        </div>
+                        <div class="input-group">
+                            <label style="color:#2563eb;">طول الوتر (القطر):</label>
+                            <input type="number" id="side-diag" value="44.72" step="any" oninput="calculateAndDrawSketch()">
+                        </div>
+                        <div class="input-group" style="justify-content:flex-end;">
+                            <button class="btn-dark" onclick="setRightAngleSketch()">⚡ ضبط زاوية قائمة</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الفرز والتجنيب والميراث الشرعي -->
+                <div class="card card-highlight">
+                    <div class="card-title" style="color:#065f46; border-color:#10b981;">2. ⚖️ تقسيم الأرض والفرز الشرعي الإسلامي</div>
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label>طريقة التقسيم:</label>
+                            <select id="subdiv-mode" onchange="toggleSubdivMode()">
+                                <option value="none">بدون تقسيم (قطعة واحدة)</option>
+                                <option value="islamic" selected>تقسيم مواريث شرعي إسلامي (للذكر مثل حظ الأنثيين)</option>
+                                <option value="equal">تقسيم قطع متساوية</option>
+                                <option value="shares">تقسيم بحصص مخصصة يدوية</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>اتجاه خطوط التقسيم:</label>
+                            <select id="subdiv-dir" onchange="calculateAndDrawSketch()">
+                                <option value="vertical">طولي (موازي للشرقي والغربي)</option>
+                                <option value="horizontal">عرضي (موازي للبحري والقبلي)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- مدخلات الميراث الشرعي الإسلامي -->
+                    <div id="islamic-inputs" class="input-grid" style="background:#ecfdf5; padding:8px; border-radius:6px; border:1px solid #a7f3d0;">
+                        <div class="input-group full">
+                            <label style="color:#047857;">القاعدة الشرعية: يخصم نصيب الزوج/الزوجة أولاً، ثم يوزع الباقي تعصيباً (للذكر مثل حظ الأنثيين 2 : 1)</label>
+                        </div>
+                        <div class="input-group">
+                            <label>حالة الزوج / الزوجة:</label>
+                            <select id="heir-spouse" onchange="calculateAndDrawSketch()">
+                                <option value="none" selected>لا يوجد زوج/زوجة</option>
+                                <option value="wife">زوجة (الثمن 1/8 مع وجود فرع وارث، أو الربع)</option>
+                                <option value="husband">زوج (الربع 1/4 مع وجود فرع وارث، أو النصف)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>عدد الأبناء الذكور:</label>
+                            <input type="number" id="heir-sons" value="1" min="0" max="15" oninput="calculateAndDrawSketch()">
+                        </div>
+                        <div class="input-group">
+                            <label>عدد البنات الإناث:</label>
+                            <input type="number" id="heir-daughters" value="1" min="0" max="15" oninput="calculateAndDrawSketch()">
+                        </div>
+                        <div class="input-group">
+                            <label>تجميع أو تفريد القطع:</label>
+                            <select id="heir-grouping" onchange="calculateAndDrawSketch()">
+                                <option value="individual" selected>قطعة مستقلة لكل وارث</option>
+                                <option value="gender">جمع الذكور بقطعة والإناث بقطعة</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- مدخلات التقسيم المتساوي -->
+                    <div id="equal-inputs" class="input-grid" style="display:none;">
+                        <div class="input-group full">
+                            <label>عدد القطع المتساوية:</label>
+                            <input type="number" id="subdiv-count" value="4" min="2" max="20" oninput="calculateAndDrawSketch()">
+                        </div>
+                    </div>
+
+                    <!-- مدخلات الحصص المخصصة -->
+                    <div id="custom-inputs" class="input-grid" style="display:none;">
+                        <div class="input-group full">
+                            <label>أدخل (الاسم:الحصة) مفصولة بفاصلة:</label>
+                            <input type="text" id="subdiv-shares" value="الشريك الأول:2, الشريك الثاني:1" oninput="calculateAndDrawSketch()">
+                        </div>
+                    </div>
+
+                    <div class="coords-list" style="max-height:125px; margin-top:6px;">
+                        <table>
+                            <thead>
+                                <tr><th>الوارث / القطعة</th><th>النسبة الشرعية</th><th>المساحة (م²)</th><th>فدان/قيراط/سهم</th><th>الواجهتين (م)</th></tr>
+                            </thead>
+                            <tbody id="subdiv-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- الجيران والمهندس -->
+                <div class="card">
+                    <div class="card-title">3. الجيران وبيانات الخرطوشة</div>
+                    <div class="input-grid">
+                        <div class="input-group"><label>الحد البحري (فوق):</label><input type="text" id="neigh-n" value="شارع عمومي عرض 10 م" oninput="calculateAndDrawSketch()"></div>
+                        <div class="input-group"><label>الحد القبلي (تحت):</label><input type="text" id="neigh-s" value="جار - ملك ورثة فلان" oninput="calculateAndDrawSketch()"></div>
+                        <div class="input-group"><label>الحد الشرقي (يمين):</label><input type="text" id="neigh-e" value="جار مبني" oninput="calculateAndDrawSketch()"></div>
+                        <div class="input-group"><label>الحد الغربي (شمال):</label><input type="text" id="neigh-w" value="ممر خاص عرض 4 م" oninput="calculateAndDrawSketch()"></div>
+                        <div class="input-group"><label>اسم المهندس:</label><input type="text" id="eng-name" value="م. أحمد سمير" oninput="calculateAndDrawSketch()"></div>
+                        <div class="input-group"><label>اسم المشروع / المالك:</label><input type="text" id="owner-name" value="فرز وتجنيب قطعة أرض" oninput="calculateAndDrawSketch()"></div>
+                        <div class="input-group"><label>مسافة الأوفست:</label><input type="range" id="dim-offset" min="25" max="75" value="44" oninput="calculateAndDrawSketch()"></div>
+                        <div class="input-group">
+                            <label>نمط اللوحة:</label>
+                            <select id="sketch-theme" onchange="calculateAndDrawSketch()">
+                                <option value="light">لوحة بيضاء (طباعة)</option>
+                                <option value="cad">لوحة أوتوكاد داكنة</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <button class="btn-primary" onclick="calculateAndDrawSketch()">🔄 تحديث الرسم</button>
+                        <button class="btn-dark" onclick="exportSketchDXF()">📐 تصدير أوتوكاد (.DXF)</button>
+                        <button class="btn-success" onclick="downloadCanvas('sketchCanvas', 'Survey_Sketch.png')">📥 حفظ صورة PNG</button>
+                        <button class="btn-warning" onclick="transferFourSidesToCAD()">🏠 نقل الـ 4 أضلاع لتصميم CAD</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="canvas-panel">
+                <canvas id="sketchCanvas" width="950" height="680"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- الأداة 2: مصمم الأوتوكاد بالأضلاع الأربعة -->
+    <section id="tool-cad" class="tool-view">
+        <div class="split-layout">
+            <div class="control-panel">
+                <div class="card">
+                    <div class="card-title">1. أضلاع قطعة الأرض الأربعة لتصميم المنزل (بالمتر)</div>
+                    <p style="font-size:0.75rem; color:#475569; margin-bottom:8px;">أدخل الأضلاع الأربعة (فوق، تحت، يمين، شمال) ليقوم الذكاء الهندسي بتوليد مسقط المنزل بداخلها:</p>
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label>الضلع العلوي (الخلفي / فوق):</label>
+                            <input type="number" id="cad-n" value="20" step="any" oninput="autoCalcDiagonalCAD()">
+                        </div>
+                        <div class="input-group">
+                            <label>الضلع السفلي (الواجهة / تحت):</label>
+                            <input type="number" id="cad-s" value="20" step="any" oninput="autoCalcDiagonalCAD()">
+                        </div>
+                        <div class="input-group">
+                            <label>الضلع الأيمن (يمين):</label>
+                            <input type="number" id="cad-e" value="40" step="any" oninput="autoCalcDiagonalCAD()">
+                        </div>
+                        <div class="input-group">
+                            <label>الضلع الأيسر (شمال):</label>
+                            <input type="number" id="cad-w" value="40" step="any" oninput="autoCalcDiagonalCAD()">
+                        </div>
+                        <div class="input-group">
+                            <label style="color:#2563eb;">الوتر (القطر):</label>
+                            <input type="number" id="cad-diag" value="44.72" step="any" oninput="generateAICADPlan()">
+                        </div>
+                        <div class="input-group" style="justify-content:flex-end;">
+                            <button class="btn-dark" onclick="setRightAngleCAD()">⚡ زاوية قائمة</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">2. إعدادات التصميم المعماري (المنزل المصري)</div>
+                    <div class="input-grid">
+                        <div class="input-group full">
+                            <label>نمط المنزل المطلوب:</label>
+                            <select id="cad-style" onchange="generateAICADPlan()">
+                                <option value="rural">منزل مصري ريفي / بدائي (حوش سماوي + مضيفة + صالة + غرف)</option>
+                                <option value="apartment">شقة سكنية كاملة (ريسبشن + طرقة + غرف + حمام ومطبخ ومنور)</option>
+                                <option value="commercial">منزل بواجهة تجارية (محلات على الواجهة + سكن خلفي)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>عدد غرف النوم:</label>
+                            <select id="cad-rooms" onchange="generateAICADPlan()">
+                                <option value="2">2 غرف نوم</option>
+                                <option value="3" selected>3 غرف نوم</option>
+                                <option value="4">4 غرف نوم</option>
+                                <option value="5">5 غرف نوم</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>نسبة الحوش الأمامي:</label>
+                            <select id="cad-courtyard" onchange="generateAICADPlan()">
+                                <option value="0.25" selected>حوش 25% من العمق</option>
+                                <option value="0.15">حوش 15% من العمق</option>
+                                <option value="0">بدون حوش (بناء كامل)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button class="btn-primary span-2" onclick="generateAICADPlan()">⚡ توليد المسقط المعماري للأضلاع الأربعة</button>
+                        <button class="btn-dark" onclick="exportCAD_DXF()">📐 تصدير ملف أوتوكاد (.DXF)</button>
+                        <button class="btn-success" onclick="downloadCanvas('cadCanvas', 'AutoCAD_4Sides_Plan.png')">📥 حفظ صورة المخطط</button>
+                    </div>
+                </div>
+
+                <div class="card" style="flex:1;">
+                    <div class="card-title">تقرير المساحة وتفاصيل الفراغات</div>
+                    <div id="cad-report" style="font-size:0.8rem; line-height:1.6; color:#334155;"></div>
+                </div>
+            </div>
+
+            <div class="canvas-panel">
+                <canvas id="cadCanvas" width="950" height="680"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- الأداة 3: الخريطة التفاعلية (لا تظهر إلا عند فتحها) -->
+    <section id="tool-map" class="tool-view">
+        <div class="split-layout">
+            <div class="control-panel">
+                <div class="controls">
+                    <button class="btn-primary span-2" onclick="locateUser()">📍 موقعي الحالي بالـ GPS</button>
+                    <button class="btn-warning" onclick="undoLastPoint()">↩️ تراجع عن نقطة</button>
+                    <button class="btn-danger" onclick="clearMap()">🗑️ مسح الخريطة</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">نتائج القياس من القمر الصناعي</div>
+                    <div class="result-item"><span>المساحة بالمتر المربع:</span><span class="result-value" id="area-m2">0.00 م²</span></div>
+                    <div class="result-item"><span>المحيط الكلي:</span><span class="result-value" id="perimeter-m">0.00 م</span></div>
+                    <div class="feddan-box">
+                        <div class="unit-box"><span id="val-feddan">0</span><small>فدان</small></div>
+                        <div class="unit-box"><span id="val-qirat">0</span><small>قيراط</small></div>
+                        <div class="unit-box"><span id="val-sahm">0.0</span><small>سهم</small></div>
+                    </div>
+                </div>
+
+                <div class="card" style="flex:1; display:flex; flex-direction:column;">
+                    <div class="card-title">إحداثيات النقاط المترية (UTM)</div>
+                    <div class="coords-list" style="flex:1;">
+                        <table>
+                            <thead><tr><th>م</th><th>Easting X</th><th>Northing Y</th><th>Zone</th></tr></thead>
+                            <tbody id="coords-table-body"><tr><td colspan="4">اضغط على الخريطة لوضع النقاط</td></tr></tbody>
+                        </table>
+                    </div>
+                    <button class="btn-success" style="margin-top:8px; width:100%;" onclick="exportCSV()">📥 تصدير ملف CSV للأوتوكاد و GIS</button>
+                </div>
+            </div>
+
+            <div class="canvas-panel" style="padding:0;">
+                <div id="map" style="width:100%; height:100%;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- الأداة 4: دفتر الميزانية الشبكية والطولية (Leveling) -->
+    <section id="tool-leveling" class="tool-view">
+        <div class="single-container">
+            <div class="card">
+                <div class="card-title">🔭 دفتر حساب الميزانية الطولية والشبكية (طريقة منسوب سطح الميزان HI)</div>
+                <div class="input-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                    <div class="input-group"><label>اسم النقطة / المحطة:</label><input type="text" id="lvl-pt" value="BM 1"></div>
+                    <div class="input-group"><label>المؤخرة (BS):</label><input type="number" id="lvl-bs" step="any" placeholder="مثال: 1.450"></div>
+                    <div class="input-group"><label>المتوسطة (IS):</label><input type="number" id="lvl-is" step="any" placeholder="اختياري"></div>
+                    <div class="input-group"><label>المقدمة (FS):</label><input type="number" id="lvl-fs" step="any" placeholder="عند الدوران أو النهاية"></div>
+                    <div class="input-group"><label>منسوب الروبير (RL) [للنقطة الأولى]:</label><input type="number" id="lvl-rl" value="10.000" step="any"></div>
+                </div>
+                <div class="controls" style="margin-top:8px;">
+                    <button class="btn-primary" onclick="addLevelRow()">➕ إضافة قراءة للجدول</button>
+                    <button class="btn-danger" onclick="clearLevelTable()">🗑️ مسح الجدول</button>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:12px;">
+                <div class="card-title">جدول الرصد والحسابات المساحية</div>
+                <div class="coords-list" style="max-height:360px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>النقطة</th>
+                                <th>مؤخرة (BS)</th>
+                                <th>متوسطة (IS)</th>
+                                <th>مقدمة (FS)</th>
+                                <th>سطح الميزان (HI)</th>
+                                <th>المنسوب النهائي (RL)</th>
+                                <th>ملاحظات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="level-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- الأداة 5: حاسبة COGO -->
+    <section id="tool-cogo" class="tool-view">
+        <div class="single-container">
+            <div class="card">
+                <div class="card-title">🧭 حساب المسافة والانحراف بين نقطتين (Inverse COGO)</div>
+                <div class="input-grid">
+                    <div class="input-group"><label>شرقيات النقطة الأولى (E1):</label><input type="number" id="cogo-e1" value="285400" step="any"></div>
+                    <div class="input-group"><label>شماليات النقطة الأولى (N1):</label><input type="number" id="cogo-n1" value="3110200" step="any"></div>
+                    <div class="input-group"><label>شرقيات النقطة الثانية (E2):</label><input type="number" id="cogo-e2" value="285450" step="any"></div>
+                    <div class="input-group"><label>شماليات النقطة الثانية (N2):</label><input type="number" id="cogo-n2" value="3110280" step="any"></div>
+                </div>
+                <button class="btn-primary" style="width:100%;" onclick="calculateCOGO()">احسب المسافة والانحراف</button>
+                <div class="feddan-box" style="margin-top:12px;">
+                    <div class="unit-box"><span id="cogo-dist">94.34 م</span><small>المسافة الأفقية</small></div>
+                    <div class="unit-box"><span id="cogo-az-dms" style="direction:ltr;">32° 0' 19"</span><small>الانحراف الدائري</small></div>
+                    <div class="unit-box"><span id="cogo-de-dn">ΔE: 50 | ΔN: 80</span><small>فروق الإحداثيات</small></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- الأداة 6: محول الوحدات المساحية -->
+    <section id="tool-converter" class="tool-view">
+        <div class="single-container">
+            <div class="card">
+                <div class="card-title">⚖️ محول الوحدات المساحية والزراعية الشامل</div>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label>أدخل المساحة بالمتر المربع (م²):</label>
+                        <input type="number" id="conv-m2" value="4200.833" step="any" oninput="convertFromM2()">
+                    </div>
+                    <div class="input-group">
+                        <label>أو أدخل بالفدان والقيراط والسهم:</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="number" id="conv-f" placeholder="فدان" value="1" oninput="convertFromFQS()">
+                            <input type="number" id="conv-q" placeholder="قيراط" value="0" oninput="convertFromFQS()">
+                            <input type="number" id="conv-s" placeholder="سهم" value="0" oninput="convertFromFQS()">
+                        </div>
+                    </div>
+                </div>
+                <div class="feddan-box" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-top:15px;">
+                    <div class="unit-box"><span id="res-m2">4200.83</span><small>متر مربع (م²)</small></div>
+                    <div class="unit-box"><span id="res-fqs">1ف ، 0ط ، 0.0س</span><small>التفقيط المصري</small></div>
+                    <div class="unit-box"><span id="res-hec">0.4201</span><small>هكتار (10,000 م²)</small></div>
+                    <div class="unit-box"><span id="res-qasaba">333.33</span><small>قصبة مربعة (12.6 م²)</small></div>
+                    <div class="unit-box"><span id="res-donum">4.20</span><small>دونم (1000 م²)</small></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>`;
+
+// ================= 2. محتوى ملف style.css =================
+const STYLE_CSS = `* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Cairo', sans-serif;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #f1f5f9;
+    color: #0f172a;
+    overflow: hidden;
+}
+
+.app-header {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 10px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #1e293b;
+    z-index: 1000;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon {
+    font-size: 1.8rem;
+}
+
+.brand h1 {
+    font-size: 1.15rem;
+    color: #38bdf8;
+    line-height: 1.2;
+}
+
+.brand small {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-home, .btn-install {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-install {
+    background: #10b981;
+}
+
+.btn-home:hover { background: #1d4ed8; }
+
+.tool-view {
+    display: none;
+    flex: 1;
+    height: calc(100vh - 62px);
+    overflow-y: auto;
+}
+
+.tool-view.active {
+    display: block;
+}
+
+/* شاشة الأيقونات الرئيسية */
+.hero-banner {
+    background: linear-gradient(135deg, #0f172a, #1e3a8a);
+    color: #fff;
+    text-align: center;
+    padding: 28px 20px;
+}
+
+.hero-banner h2 {
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+    color: #38bdf8;
+}
+
+.hero-banner p {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 20px;
+    padding: 25px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.tool-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 22px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.tool-card:hover {
+    transform: translateY(-5px);
+    border-color: #3b82f6;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
+}
+
+.tool-icon {
+    font-size: 2.4rem;
+    margin-bottom: 12px;
+}
+
+.tool-card h3 {
+    font-size: 1.1rem;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.tool-card p {
+    font-size: 0.85rem;
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 14px;
+}
+
+.card-action {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+/* تخطيط الأدوات المقسمة */
+.split-layout {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+}
+
+.control-panel {
+    width: 460px;
+    background: #ffffff;
+    border-left: 1px solid #cbd5e1;
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.canvas-panel {
+    flex: 1;
+    background: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    overflow: auto;
+}
+
+canvas {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.single-container {
+    max-width: 900px;
+    margin: 25px auto;
+    padding: 0 15px;
+}
+
+.card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.card-highlight {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.card-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    border-bottom: 2px solid #2563eb;
+    display: inline-block;
+    padding-bottom: 2px;
+}
+
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.input-group.full {
+    grid-column: span 2;
+}
+
+.input-group label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.input-group input, .input-group select {
+    padding: 6px 9px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    background: #fff;
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-primary { background: #2563eb; color: #fff; }
+.btn-dark { background: #0f172a; color: #38bdf8; }
+.btn-success { background: #10b981; color: #fff; }
+.btn-warning { background: #f59e0b; color: #fff; }
+.btn-danger { background: #ef4444; color: #fff; }
+.span-2 { grid-column: span 2; }
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+}
+
+.result-value { font-weight: 700; }
+
+.feddan-box {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    text-align: center;
+    margin-top: 8px;
+}
+
+.unit-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 8px 4px;
+}
+
+.unit-box span {
+    display: block;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #1d4ed8;
+}
+
+.unit-box small {
+    font-size: 0.72rem;
+    color: #475569;
+}
+
+.coords-list {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 0.75rem;
+}
+
+table { width: 100%; border-collapse: collapse; text-align: center; }
+th, td { padding: 5px 4px; border-bottom: 1px solid #e2e8f0; }
+th { background: #f1f5f9; position: sticky; top: 0; }
+
+.vertex-marker {
+    background: #f59e0b;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    width: 22px !important;
+    height: 22px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.segment-label {
+    background: rgba(15, 23, 42, 0.88);
+    color: #38bdf8;
+    border: 1px solid #38bdf8;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+@media (max-width: 850px) {
+    .split-layout { flex-direction: column-reverse; overflow-y: auto; }
+    .control-panel { width: 100%; height: auto; }
+    .canvas-panel { min-height: 360px; }
+}`;
+
+// ================= 3. محتوى ملف app.js =================
+const APP_JS = `// ================= إدارة التنقل وحفظ البيانات التلقائي (LocalStorage) =================
+let mapInitialized = false;
+let map = null;
+let points = [], markers = [], segmentLabels = [], polygonLayer = null, polylineLayer = null;
+let currentSketchDXF = [], currentCADEntities = [];
+
+function openTool(toolName) {
+    document.querySelectorAll('.tool-view').forEach(v => v.classList.remove('active'));
+    document.getElementById('tool-' + toolName).classList.add('active');
+    localStorage.setItem('activeSurveyTool', toolName);
+
+    if (toolName === 'map') {
+        initMapIfNeeded();
+        setTimeout(() => map.invalidateSize(), 150);
+    } else if (toolName === 'sketch') {
+        calculateAndDrawSketch();
+    } else if (toolName === 'cad') {
+        generateAICADPlan();
+    }
+}
+
+// حفظ واسترجاع المدخلات تلقائياً للحفاظ على ثبات الموقع
+function setupAutoPersistence() {
+    const inputs = document.querySelectorAll('input, select');
+    inputs.forEach(el => {
+        if (!el.id) return;
+        const saved = localStorage.getItem('survey_inp_' + el.id);
+        if (saved !== null) el.value = saved;
+
+        el.addEventListener('input', () => {
+            localStorage.setItem('survey_inp_' + el.id, el.value);
+        });
+        el.addEventListener('change', () => {
+            localStorage.setItem('survey_inp_' + el.id, el.value);
+        });
+    });
+}
+
+// ================= تثبيت الموقع كتطبيق PWA من متصفح كروم =================
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installPwaBtn').style.display = 'inline-block';
+});
+
+function installPWA() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        document.getElementById('installPwaBtn').style.display = 'none';
+    });
+}
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ================= دوال الهندسة الرياضية المشتركة =================
+function heronArea(a, b, c) {
+    if (a + b <= c || a + c <= b || b + c <= a) return -1;
+    const s = (a + b + c) / 2;
+    return Math.sqrt(s * (s - a) * (s - b) * (s - c));
+}
+
+function formatFQS(sqMeters) {
+    const F = 4200.833333333333, Q = F / 24, S = Q / 24;
+    const fed = Math.floor(sqMeters / F);
+    const rem1 = sqMeters % F;
+    const qir = Math.floor(rem1 / Q);
+    const sah = ((rem1 % Q) / S).toFixed(1);
+    return { fed, qir, sah };
+}
+
+function lerpPt(p1, p2, t) {
+    return { x: p1.x + (p2.x - p1.x) * t, y: p1.y + (p2.y - p1.y) * t };
+}
+
+function distPt(p1, p2) {
+    return Math.hypot(p2.x - p1.x, p2.y - p1.y);
+}
+
+// تحويل الإحداثيات النسبية (u, v) داخل أي شكل رباعي ذو 4 أضلاع إلى إحداثيات حقيقية (Bilinear Mapping)
+function mapQuadUV(pNW, pNE, pSE, pSW, u, v) {
+    // v=0 هو الضلع السفلي (الواجهة)، v=1 هو الضلع العلوي (الخلفي)
+    const bot = lerpPt(pSW, pSE, u);
+    const top = lerpPt(pNW, pNE, u);
+    return lerpPt(bot, top, v);
+}
+
+function computeQuadVertices(N, S, E, W, D) {
+    let area1 = heronArea(S, W, D);
+    let area2 = heronArea(N, E, D);
+    if (area1 === -1 || area2 === -1) {
+        D = Math.sqrt(((N + S) / 2) ** 2 + ((E + W) / 2) ** 2);
+        area1 = heronArea(S, W, D);
+        area2 = heronArea(N, E, D);
+        if (area1 === -1 || area2 === -1) return null;
+    }
+
+    const pSW = { x: 0, y: 0 };
+    const pSE = { x: S, y: 0 };
+    const xNW = (W * W - D * D + S * S) / (2 * S);
+    const yNW = Math.sqrt(Math.max(0, W * W - xNW * xNW));
+    const pNW = { x: xNW, y: yNW };
+
+    const dx = pSE.x - pNW.x, dy = pSE.y - pNW.y;
+    const dLen = Math.hypot(dx, dy);
+    const aDist = (N * N - E * E + dLen * dLen) / (2 * dLen);
+    const hDist = Math.sqrt(Math.max(0, N * N - aDist * aDist));
+
+    const midX = pNW.x + (aDist / dLen) * dx;
+    const midY = pNW.y + (aDist / dLen) * dy;
+
+    const pNE = {
+        x: midX - (hDist / dLen) * dy,
+        y: midY + (hDist / dLen) * dx
+    };
+
+    return { pNW, pNE, pSE, pSW, D, area1, area2, totalArea: area1 + area2 };
+}
+
+// ================= الأداة 1: الكروكي المساحي + المواريث الشرعية الإسلامية =================
+function toggleSubdivMode() {
+    const mode = document.getElementById('subdiv-mode').value;
+    document.getElementById('islamic-inputs').style.display = (mode === 'islamic') ? 'grid' : 'none';
+    document.getElementById('equal-inputs').style.display = (mode === 'equal') ? 'grid' : 'none';
+    document.getElementById('custom-inputs').style.display = (mode === 'shares') ? 'grid' : 'none';
+    calculateAndDrawSketch();
+}
+
+function setRightAngleSketch() {
+    const N = parseFloat(document.getElementById('side-n').value) || 40;
+    const S = parseFloat(document.getElementById('side-s').value) || 40;
+    const E = parseFloat(document.getElementById('side-e').value) || 20;
+    const W = parseFloat(document.getElementById('side-w').value) || 20;
+    document.getElementById('side-diag').value = Math.sqrt(((N+S)/2)**2 + ((E+W)/2)**2).toFixed(2);
+    calculateAndDrawSketch();
+}
+
+function autoCalcDiagonalSketch() {
+    setRightAngleSketch();
+}
+
+// حساب الأنصبة وفق الشريعة الإسلامية (الزوج/الزوجة + للذكر مثل حظ الأنثيين)
+function getSubdivisionSharesList() {
+    const mode = document.getElementById('subdiv-mode').value;
+    if (mode === 'none') return [];
+
+    if (mode === 'islamic') {
+        const spouse = document.getElementById('heir-spouse').value;
+        const sons = Math.max(0, parseInt(document.getElementById('heir-sons').value) || 0);
+        const daughters = Math.max(0, parseInt(document.getElementById('heir-daughters').value) || 0);
+        const grouping = document.getElementById('heir-grouping').value;
+
+        const hasChildren = (sons + daughters) > 0;
+        let spouseShare = 0;
+        let list = [];
+
+        if (spouse === 'wife') {
+            spouseShare = hasChildren ? (1 / 8) : (1 / 4);
+            list.push({ name: 'نصيب الزوجة', weight: spouseShare, desc: hasChildren ? 'الثمن (1/8)' : 'الربع (1/4)' });
+        } else if (spouse === 'husband') {
+            spouseShare = hasChildren ? (1 / 4) : (1 / 2);
+            list.push({ name: 'نصيب الزوج', weight: spouseShare, desc: hasChildren ? 'الربع (1/4)' : 'النصف (1/2)' });
+        }
+
+        const remainder = 1 - spouseShare;
+        const totalUnits = (sons * 2) + (daughters * 1);
+
+        if (totalUnits > 0) {
+            if (grouping === 'gender') {
+                if (sons > 0) {
+                    const w = remainder * ((sons * 2) / totalUnits);
+                    list.push({ name: \`الأبناء الذكور (\${sons})\`, weight: w, desc: \`\${(w*100).toFixed(1)}% (حظ الذكور)\` });
+                }
+                if (daughters > 0) {
+                    const w = remainder * ((daughters * 1) / totalUnits);
+                    list.push({ name: \`البنات الإناث (\${daughters})\`, weight: w, desc: \`\${(w*100).toFixed(1)}% (حظ الإناث)\` });
+                }
+            } else {
+                for (let i = 1; i <= sons; i++) {
+                    const w = remainder * (2 / totalUnits);
+                    list.push({ name: \`ابن ذكر (\${i})\`, weight: w, desc: \`سهمان (\${(w*100).toFixed(1)}%)\` });
+                }
+                for (let j = 1; j <= daughters; j++) {
+                    const w = remainder * (1 / totalUnits);
+                    list.push({ name: \`بنت أنثى (\${j})\`, weight: w, desc: \`سهم واحد (\${(w*100).toFixed(1)}%)\` });
+                }
+            }
+        }
+        return list;
+    }
+
+    if (mode === 'equal') {
+        const c = Math.max(2, parseInt(document.getElementById('subdiv-count').value) || 2);
+        const list = [];
+        for (let i = 1; i <= c; i++) list.push({ name: \`قطعة (\${i})\`, weight: 1, desc: \`\${(100/c).toFixed(1)}%\` });
+        return list;
+    }
+
+    if (mode === 'shares') {
+        const raw = document.getElementById('subdiv-shares').value.split(/[,،]/);
+        const list = [];
+        raw.forEach((item, idx) => {
+            const [n, v] = item.split(':');
+            const w = parseFloat(v) || 1;
+            if (n && n.trim()) list.push({ name: n.trim(), weight: w, desc: \`\${w} حصة\` });
+        });
+        return list;
+    }
+    return [];
+}
+
+function quadAreaShoelace(p1, p2, p3, p4) {
+    return 0.5 * Math.abs(
+        (p1.x*p2.y - p2.x*p1.y) + (p2.x*p3.y - p3.x*p2.y) +
+        (p3.x*p4.y - p4.x*p3.y) + (p4.x*p1.y - p1.x*p4.y)
+    );
+}
+
+function findExactPartitionParam(pNW, pNE, pSE, pSW, targetRatio, dir) {
+    const totalA = quadAreaShoelace(pNW, pNE, pSE, pSW);
+    const targetA = targetRatio * totalA;
+    let low = 0, high = 1;
+    for (let i = 0; i < 30; i++) {
+        const mid = (low + high) / 2;
+        let currA = 0;
+        if (dir === 'vertical') {
+            currA = quadAreaShoelace(pNW, lerpPt(pNW, pNE, mid), lerpPt(pSW, pSE, mid), pSW);
+        } else {
+            currA = quadAreaShoelace(pNW, pNE, lerpPt(pNE, pSE, mid), lerpPt(pNW, pSW, mid));
+        }
+        if (currA < targetA) low = mid; else high = mid;
+    }
+    return (low + high) / 2;
+}
+
+function drawOffsetDimension(ctx, p1, p2, offsetPx, dimText, neighborText, isDark) {
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1) return;
+    const nx = dy / len, ny = -dx / len;
+    const d1 = { x: p1.x + nx * offsetPx, y: p1.y + ny * offsetPx };
+    const d2 = { x: p2.x + nx * offsetPx, y: p2.y + ny * offsetPx };
+
+    ctx.save();
+    ctx.strokeStyle = isDark ? '#38bdf8' : '#2563eb';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(p1.x + nx * 4, p1.y + ny * 4); ctx.lineTo(d1.x + nx * 5, d1.y + ny * 5);
+    ctx.moveTo(p2.x + nx * 4, p2.y + ny * 4); ctx.lineTo(d2.x + nx * 5, d2.y + ny * 5);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(d1.x, d1.y); ctx.lineTo(d2.x, d2.y); ctx.stroke();
+
+    const midX = (d1.x + d2.x) / 2, midY = (d1.y + d2.y) / 2;
+    let angle = Math.atan2(dy, dx);
+    if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
+
+    ctx.translate(midX, midY);
+    ctx.rotate(angle);
+    ctx.font = 'bold 12px Cairo';
+    const tw = ctx.measureText(dimText).width + 10;
+    ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
+    ctx.fillRect(-tw / 2, -10, tw, 20);
+    ctx.fillStyle = isDark ? '#facc15' : '#1d4ed8';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(dimText, 0, 0);
+
+    if (neighborText) {
+        ctx.font = '600 11.5px Cairo';
+        ctx.fillStyle = isDark ? '#cbd5e1' : '#334155';
+        const nOff = (Math.abs(angle) > 0.1 && nx < 0) ? 18 : -18;
+        ctx.fillText(neighborText, 0, nOff);
+    }
+    ctx.restore();
+}
+
+function drawTextAlongSegment(ctx, p1, p2, text, offsetPerp, color, bgColor) {
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 22) return;
+    const nx = dy / len, ny = -dx / len;
+    const mx = (p1.x + p2.x) / 2 + nx * offsetPerp;
+    const my = (p1.y + p2.y) / 2 + ny * offsetPerp;
+    let angle = Math.atan2(dy, dx);
+    if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
+
+    ctx.save();
+    ctx.translate(mx, my); ctx.rotate(angle);
+    ctx.font = 'bold 11px Cairo';
+    const tw = ctx.measureText(text).width + 8;
+    if (bgColor) { ctx.fillStyle = bgColor; ctx.fillRect(-tw / 2, -8, tw, 16); }
+    ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+}
+
+function calculateAndDrawSketch() {
+    const N = parseFloat(document.getElementById('side-n').value) || 40;
+    const S = parseFloat(document.getElementById('side-s').value) || 40;
+    const E = parseFloat(document.getElementById('side-e').value) || 20;
+    const W = parseFloat(document.getElementById('side-w').value) || 20;
+    const D_in = parseFloat(document.getElementById('side-diag').value) || 44.72;
+
+    const quad = computeQuadVertices(N, S, E, W, D_in);
+    if (!quad) return;
+    const { pNW, pNE, pSE, pSW, totalArea } = quad;
+    const perimeter = N + S + E + W;
+    const fqs = formatFQS(totalArea);
+
+    currentSketchDXF = [
+        { layer: 'BOUNDARY', x1: pNW.x, y1: pNW.y, x2: pNE.x, y2: pNE.y },
+        { layer: 'BOUNDARY', x1: pNE.x, y1: pNE.y, x2: pSE.x, y2: pSE.y },
+        { layer: 'BOUNDARY', x1: pSE.x, y1: pSE.y, x2: pSW.x, y2: pSW.y },
+        { layer: 'BOUNDARY', x1: pSW.x, y1: pSW.y, x2: pNW.x, y2: pNW.y }
+    ];
+
+    const canvas = document.getElementById('sketchCanvas');
+    const ctx = canvas.getContext('2d');
+    const isDark = document.getElementById('sketch-theme').value === 'cad';
+    const offsetPx = parseFloat(document.getElementById('dim-offset').value) || 44;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = isDark ? '#0b1120' : '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = isDark ? '#38bdf8' : '#0f172a';
+    ctx.lineWidth = 3; ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+
+    const pts = [pSW, pSE, pNE, pNW];
+    const minX = Math.min(...pts.map(p => p.x)), maxX = Math.max(...pts.map(p => p.x));
+    const minY = Math.min(...pts.map(p => p.y)), maxY = Math.max(...pts.map(p => p.y));
+
+    const scale = Math.min((canvas.width - 280) / (maxX - minX || 1), (canvas.height - 260) / (maxY - minY || 1));
+    const cxScreen = canvas.width / 2, cyScreen = (canvas.height - 90) / 2;
+    const cxPoly = (minX + maxX) / 2, cyPoly = (minY + maxY) / 2;
+
+    const toCanvas = pt => ({
+        x: cxScreen + (pt.x - cxPoly) * scale,
+        y: cyScreen - (pt.y - cyPoly) * scale
+    });
+
+    const cNW = toCanvas(pNW), cNE = toCanvas(pNE), cSE = toCanvas(pSE), cSW = toCanvas(pSW);
+    const shares = getSubdivisionSharesList();
+    const dir = document.getElementById('subdiv-dir').value;
+    const tbody = document.getElementById('subdiv-tbody');
+    tbody.innerHTML = '';
+
+    const colors = ['rgba(59,130,246,0.16)', 'rgba(16,185,129,0.16)', 'rgba(245,158,11,0.16)', 'rgba(168,85,247,0.16)', 'rgba(236,72,153,0.16)'];
+
+    if (shares.length >= 2) {
+        const totalW = shares.reduce((a, b) => a + b.weight, 0);
+        let cumW = 0, prevT = 0;
+
+        shares.forEach((sh, idx) => {
+            cumW += sh.weight;
+            const ratio = cumW / totalW;
+            const nextT = (idx === shares.length - 1) ? 1 : findExactPartitionParam(pNW, pNE, pSE, pSW, ratio, dir);
+
+            let subNW, subNE, subSE, subSW, f1 = 0, f2 = 0, divLen = 0;
+            if (dir === 'vertical') {
+                subNW = lerpPt(pNW, pNE, prevT); subNE = lerpPt(pNW, pNE, nextT);
+                subSE = lerpPt(pSW, pSE, nextT); subSW = lerpPt(pSW, pSE, prevT);
+                f1 = distPt(subNW, subNE); f2 = distPt(subSW, subSE); divLen = distPt(subNE, subSE);
+            } else {
+                subNW = lerpPt(pNW, pSW, prevT); subNE = lerpPt(pNE, pSE, prevT);
+                subSE = lerpPt(pNE, pSE, nextT); subSW = lerpPt(pNW, pSW, nextT);
+                f1 = distPt(subNE, subSE); f2 = distPt(subNW, subSW); divLen = distPt(subSW, subSE);
+            }
+
+            const pArea = totalArea * (sh.weight / totalW);
+            const pfqs = formatFQS(pArea);
+            const csNW = toCanvas(subNW), csNE = toCanvas(subNE), csSE = toCanvas(subSE), csSW = toCanvas(subSW);
+
+            ctx.beginPath();
+            ctx.moveTo(csNW.x, csNW.y); ctx.lineTo(csNE.x, csNE.y);
+            ctx.lineTo(csSE.x, csSE.y); ctx.lineTo(csSW.x, csSW.y); ctx.closePath();
+            ctx.fillStyle = colors[idx % colors.length]; ctx.fill();
+
+            const subBg = isDark ? '#0f172a' : '#ffffff';
+            const subCol = isDark ? '#38bdf8' : '#0f766e';
+            if (dir === 'vertical') {
+                drawTextAlongSegment(ctx, csNW, csNE, \`\${f1.toFixed(2)}م\`, -12, subCol, subBg);
+                drawTextAlongSegment(ctx, csSE, csSW, \`\${f2.toFixed(2)}م\`, -12, subCol, subBg);
+            } else {
+                drawTextAlongSegment(ctx, csNE, csSE, \`\${f1.toFixed(2)}م\`, -13, subCol, subBg);
+                drawTextAlongSegment(ctx, csSW, csNW, \`\${f2.toFixed(2)}م\`, -13, subCol, subBg);
+            }
+
+            if (idx < shares.length - 1) {
+                const dp1 = (dir === 'vertical') ? csNE : csSW;
+                const dp2 = csSE;
+                ctx.save(); ctx.beginPath(); ctx.setLineDash([7, 4]);
+                ctx.strokeStyle = isDark ? '#facc15' : '#059669'; ctx.lineWidth = 2;
+                ctx.moveTo(dp1.x, dp1.y); ctx.lineTo(dp2.x, dp2.y); ctx.stroke(); ctx.restore();
+                drawTextAlongSegment(ctx, dp1, dp2, \`\${divLen.toFixed(2)}م\`, 0, isDark ? '#facc15' : '#065f46', subBg);
+
+                const mp1 = (dir === 'vertical') ? subNE : subSW;
+                currentSketchDXF.push({ layer: 'SUBDIVISION', x1: mp1.x, y1: mp1.y, x2: subSE.x, y2: subSE.y });
+            }
+
+            const cx = (csNW.x + csNE.x + csSE.x + csSW.x) / 4;
+            const cy = (csNW.y + csNE.y + csSE.y + csSW.y) / 4;
+            ctx.fillStyle = isDark ? '#fff' : '#0f172a'; ctx.font = 'bold 12px Cairo'; ctx.textAlign = 'center';
+            ctx.fillText(sh.name, cx, cy - 12);
+            ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
+            ctx.fillText(\`\${pArea.toFixed(1)} م²\`, cx, cy + 4);
+            ctx.fillStyle = isDark ? '#facc15' : '#b45309'; ctx.font = '600 10.5px Cairo';
+            ctx.fillText(\`\${pfqs.qir}ط و \${pfqs.sah}س\`, cx, cy + 19);
+
+            tbody.innerHTML += \`<tr><td><b>\${sh.name}</b></td><td>\${sh.desc}</td><td>\${pArea.toFixed(2)}</td><td>\${pfqs.fed}ف \${pfqs.qir}ط \${pfqs.sah}س</td><td>\${f1.toFixed(2)} × \${f2.toFixed(2)}</td></tr>\`;
+            prevT = nextT;
+        });
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(cNW.x, cNW.y); ctx.lineTo(cNE.x, cNE.y); ctx.lineTo(cSE.x, cSE.y); ctx.lineTo(cSW.x, cSW.y); ctx.closePath();
+    ctx.lineWidth = 3; ctx.strokeStyle = isDark ? '#fff' : '#0f172a'; ctx.stroke();
+
+    drawOffsetDimension(ctx, cNW, cNE, offsetPx, \`بحري (فوق): \${N.toFixed(2)} م\`, document.getElementById('neigh-n').value, isDark);
+    drawOffsetDimension(ctx, cNE, cSE, offsetPx, \`شرقي (يمين): \${E.toFixed(2)} م\`, document.getElementById('neigh-e').value, isDark);
+    drawOffsetDimension(ctx, cSE, cSW, offsetPx, \`قبلي (تحت): \${S.toFixed(2)} م\`, document.getElementById('neigh-s').value, isDark);
+    drawOffsetDimension(ctx, cSW, cNW, offsetPx, \`غربي (شمال): \${W.toFixed(2)} م\`, document.getElementById('neigh-w').value, isDark);
+
+    // الخرطوشة السفلى
+    const boxY = canvas.height - 85;
+    ctx.fillStyle = isDark ? '#1e293b' : '#f8fafc';
+    ctx.strokeStyle = isDark ? '#38bdf8' : '#0f172a'; ctx.lineWidth = 2;
+    ctx.fillRect(18, boxY, canvas.width - 36, 68); ctx.strokeRect(18, boxY, canvas.width - 36, 68);
+    ctx.fillStyle = isDark ? '#fff' : '#0f172a'; ctx.textAlign = 'right'; ctx.font = 'bold 13px Cairo';
+    ctx.fillText(\`المشروع: \${document.getElementById('owner-name').value} | المهندس: \${document.getElementById('eng-name').value}\`, canvas.width - 30, boxY + 26);
+    ctx.fillStyle = isDark ? '#facc15' : '#1d4ed8';
+    ctx.fillText(\`المساحة الكلية: \${totalArea.toFixed(2)} م² (\${fqs.fed} فدان ، \${fqs.qir} قيراط ، \${fqs.sah} سهم) | المحيط: \${perimeter.toFixed(2)} م\`, canvas.width - 30, boxY + 50);
+}
+
+function transferFourSidesToCAD() {
+    document.getElementById('cad-n').value = document.getElementById('side-n').value;
+    document.getElementById('cad-s').value = document.getElementById('side-s').value;
+    document.getElementById('cad-e').value = document.getElementById('side-e').value;
+    document.getElementById('cad-w').value = document.getElementById('side-w').value;
+    document.getElementById('cad-diag').value = document.getElementById('side-diag').value;
+    openTool('cad');
+}
+
+// ================= الأداة 2: مصمم الأوتوكاد بالأضلاع الأربعة (4-Sided CAD Generator) =================
+function setRightAngleCAD() {
+    const N = parseFloat(document.getElementById('cad-n').value) || 20;
+    const S = parseFloat(document.getElementById('cad-s').value) || 20;
+    const E = parseFloat(document.getElementById('cad-e').value) || 40;
+    const W = parseFloat(document.getElementById('cad-w').value) || 40;
+    document.getElementById('cad-diag').value = Math.sqrt(((N+S)/2)**2 + ((E+W)/2)**2).toFixed(2);
+    generateAICADPlan();
+}
+
+function autoCalcDiagonalCAD() {
+    setRightAngleCAD();
+}
+
+function generateAICADPlan() {
+    const N = parseFloat(document.getElementById('cad-n').value) || 20;
+    const S = parseFloat(document.getElementById('cad-s').value) || 20;
+    const E = parseFloat(document.getElementById('cad-e').value) || 40;
+    const W = parseFloat(document.getElementById('cad-w').value) || 40;
+    const D_in = parseFloat(document.getElementById('cad-diag').value) || 44.72;
+
+    const quad = computeQuadVertices(N, S, E, W, D_in);
+    if (!quad) return;
+    const { pNW, pNE, pSE, pSW, totalArea } = quad;
+
+    const style = document.getElementById('cad-style').value;
+    const numRooms = parseInt(document.getElementById('cad-rooms').value) || 3;
+    const yardRatio = parseFloat(document.getElementById('cad-courtyard').value) || 0;
+
+    // تقسيم الفراغات المعمارية بنسب (u من 0 لـ 1 بالعرض، v من 0 لـ 1 بالعمق) ليتم إسقاطها على الأضلاع الـ 4 الحقيقية!
+    const vStart = yardRatio;
+    const vRem = 1 - vStart;
+    const uvRooms = [];
+
+    if (yardRatio > 0) {
+        uvRooms.push({ name: 'حوش سماوي / مدخل', u0: 0, u1: 1, v0: 0, v1: vStart, type: 'yard' });
+    }
+
+    if (style === 'rural') {
+        const vFront = vStart + vRem * 0.35;
+        uvRooms.push({ name: 'مضيفة استقبال', u0: 0, u1: 0.45, v0: vStart, v1: vFront, type: 'reception' });
+        uvRooms.push({ name: 'مدخل وصالة', u0: 0.45, u1: 0.80, v0: vStart, v1: vFront, type: 'hall' });
+        uvRooms.push({ name: 'بئر السلم', u0: 0.80, u1: 1.0, v0: vStart, v1: vFront, type: 'stairs' });
+
+        uvRooms.push({ name: 'صالة معيشة وسطى', u0: 0.38, u1: 0.68, v0: vFront, v1: 1.0, type: 'hall' });
+
+        const rCount = Math.max(1, numRooms - 1);
+        const dv = (1.0 - vFront) / rCount;
+        for (let i = 0; i < rCount; i++) {
+            uvRooms.push({ name: \`غرفة نوم (\${i+1})\`, u0: 0, u1: 0.38, v0: vFront + i * dv, v1: vFront + (i + 1) * dv, type: 'bedroom' });
+        }
+
+        const vExtra = vFront + (1.0 - vFront) * 0.42;
+        uvRooms.push({ name: \`غرفة نوم (\${numRooms})\`, u0: 0.68, u1: 1.0, v0: vFront, v1: vExtra, type: 'bedroom' });
+        const vMidServ = vExtra + (1.0 - vExtra) * 0.5;
+        uvRooms.push({ name: 'مطبخ', u0: 0.68, u1: 0.88, v0: vExtra, v1: vMidServ, type: 'service' });
+        uvRooms.push({ name: 'حمام', u0: 0.68, u1: 0.88, v0: vMidServ, v1: 1.0, type: 'service' });
+        uvRooms.push({ name: 'منور', u0: 0.88, u1: 1.0, v0: vExtra, v1: 1.0, type: 'shaft' });
+    } else if (style === 'apartment') {
+        const vFront = vStart + vRem * 0.38;
+        uvRooms.push({ name: 'ريسبشن واستقبال', u0: 0, u1: 0.60, v0: vStart, v1: vFront, type: 'reception' });
+        uvRooms.push({ name: 'السلم والمدخل', u0: 0.60, u1: 0.78, v0: vStart, v1: vFront, type: 'stairs' });
+        uvRooms.push({ name: 'غرفة واجهة (1)', u0: 0.78, u1: 1.0, v0: vStart, v1: vFront, type: 'bedroom' });
+
+        uvRooms.push({ name: 'طرقة توزيع', u0: 0.40, u1: 0.58, v0: vFront, v1: 1.0, type: 'hall' });
+        const rCount = Math.max(1, numRooms - 1);
+        const dv = (1.0 - vFront) / rCount;
+        for (let i = 0; i < rCount; i++) {
+            uvRooms.push({ name: \`غرفة نوم (\${i+2})\`, u0: 0, u1: 0.40, v0: vFront + i * dv, v1: vFront + (i + 1) * dv, type: 'bedroom' });
+        }
+        const vMid = vFront + (1.0 - vFront) * 0.55;
+        uvRooms.push({ name: 'مطبخ رئيسي', u0: 0.58, u1: 0.86, v0: vFront, v1: vMid, type: 'service' });
+        uvRooms.push({ name: 'حمام رئيسي', u0: 0.58, u1: 0.86, v0: vMid, v1: 1.0, type: 'service' });
+        uvRooms.push({ name: 'منور خدمة', u0: 0.86, u1: 1.0, v0: vFront, v1: 1.0, type: 'shaft' });
+    } else {
+        const vShop = vStart + vRem * 0.30;
+        uvRooms.push({ name: 'محل تجاري (1)', u0: 0, u1: 0.40, v0: vStart, v1: vShop, type: 'reception' });
+        uvRooms.push({ name: 'محل تجاري (2)', u0: 0.40, u1: 0.80, v0: vStart, v1: vShop, type: 'reception' });
+        uvRooms.push({ name: 'مدخل وسلم', u0: 0.80, u1: 1.0, v0: vStart, v1: vShop, type: 'stairs' });
+        uvRooms.push({ name: 'صالة وخدمات السكن', u0: 0.45, u1: 1.0, v0: vShop, v1: 1.0, type: 'hall' });
+        const dv = (1.0 - vShop) / numRooms;
+        for (let i = 0; i < numRooms; i++) {
+            uvRooms.push({ name: \`غرفة نوم (\${i+1})\`, u0: 0, u1: 0.45, v0: vShop + i * dv, v1: vShop + (i + 1) * dv, type: 'bedroom' });
+        }
+    }
+
+    // الرسم على لوحة الأوتوكاد
+    const canvas = document.getElementById('cadCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#090d16'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const pts = [pSW, pSE, pNE, pNW];
+    const minX = Math.min(...pts.map(p => p.x)), maxX = Math.max(...pts.map(p => p.x));
+    const minY = Math.min(...pts.map(p => p.y)), maxY = Math.max(...pts.map(p => p.y));
+    const scale = Math.min((canvas.width - 260) / (maxX - minX || 1), (canvas.height - 230) / (maxY - minY || 1));
+    const cxScreen = canvas.width / 2, cyScreen = canvas.height / 2 + 10;
+    const cxPoly = (minX + maxX) / 2, cyPoly = (minY + maxY) / 2;
+
+    const toCanvas = pt => ({
+        x: cxScreen + (pt.x - cxPoly) * scale,
+        y: cyScreen - (pt.y - cyPoly) * scale
+    });
+
+    currentCADEntities = [];
+    let reportHTML = \`<div><b>• مساحة الأرض بالأضلاع الـ 4:</b> \${totalArea.toFixed(2)} م²</div><ul style="padding-right:18px; margin-top:6px;">\`;
+
+    uvRooms.forEach(r => {
+        const mBL = mapQuadUV(pNW, pNE, pSE, pSW, r.u0, r.v0);
+        const mBR = mapQuadUV(pNW, pNE, pSE, pSW, r.u1, r.v0);
+        const mTR = mapQuadUV(pNW, pNE, pSE, pSW, r.u1, r.v1);
+        const mTL = mapQuadUV(pNW, pNE, pSE, pSW, r.u0, r.v1);
+
+        const wAvg = (distPt(mBL, mBR) + distPt(mTL, mTR)) / 2;
+        const hAvg = (distPt(mBL, mTL) + distPt(mBR, mTR)) / 2;
+        const rArea = quadAreaShoelace(mTL, mTR, mBR, mBL);
+
+        currentCADEntities.push({ mBL, mBR, mTR, mTL, name: r.name, dim: \`\${wAvg.toFixed(2)}x\${hAvg.toFixed(2)}m\` });
+        reportHTML += \`<li><b>\${r.name}:</b> \${wAvg.toFixed(2)}م × \${hAvg.toFixed(2)}م (\${rArea.toFixed(1)} م²)</li>\`;
+
+        const cBL = toCanvas(mBL), cBR = toCanvas(mBR), cTR = toCanvas(mTR), cTL = toCanvas(mTL);
+
+        ctx.beginPath();
+        ctx.moveTo(cTL.x, cTL.y); ctx.lineTo(cTR.x, cTR.y); ctx.lineTo(cBR.x, cBR.y); ctx.lineTo(cBL.x, cBL.y); ctx.closePath();
+        ctx.fillStyle = r.type === 'yard' ? 'rgba(16,185,129,0.1)' : (r.type === 'shaft' ? 'rgba(244,63,94,0.15)' : 'rgba(56,189,248,0.06)');
+        ctx.fill();
+        ctx.lineWidth = 2.4;
+        ctx.strokeStyle = r.type === 'yard' ? '#10b981' : '#38bdf8';
+        ctx.stroke();
+
+        if (r.type === 'shaft') {
+            ctx.beginPath(); ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 1.2;
+            ctx.moveTo(cTL.x, cTL.y); ctx.lineTo(cBR.x, cBR.y);
+            ctx.moveTo(cTR.x, cTR.y); ctx.lineTo(cBL.x, cBL.y); ctx.stroke();
+        }
+
+        const cx = (cTL.x + cTR.x + cBR.x + cBL.x) / 4;
+        const cy = (cTL.y + cTR.y + cBR.y + cBL.y) / 4;
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 11.5px Cairo'; ctx.textAlign = 'center';
+        ctx.fillText(r.name, cx, cy - 7);
+        ctx.fillStyle = '#facc15'; ctx.font = '600 10.5px Cairo';
+        ctx.fillText(\`\${wAvg.toFixed(1)} × \${hAvg.toFixed(1)} م\`, cx, cy + 9);
+    });
+
+    reportHTML += \`</ul>\`;
+    document.getElementById('cad-report').innerHTML = reportHTML;
+
+    const cNW = toCanvas(pNW), cNE = toCanvas(pNE), cSE = toCanvas(pSE), cSW = toCanvas(pSW);
+    drawOffsetDimension(ctx, cNW, cNE, 34, \`الضلع العلوي (فوق): \${N.toFixed(2)} م\`, '', true);
+    drawOffsetDimension(ctx, cNE, cSE, 36, \`الضلع الأيمن (يمين): \${E.toFixed(2)} م\`, '', true);
+    drawOffsetDimension(ctx, cSE, cSW, 34, \`الضلع السفلي (الواجهة): \${S.toFixed(2)} م\`, '⬇ الواجهة الرئيسية ⬇', true);
+    drawOffsetDimension(ctx, cSW, cNW, 36, \`الضلع الأيسر (شمال): \${W.toFixed(2)} م\`, '', true);
+
+    ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 15px Cairo'; ctx.textAlign = 'center';
+    ctx.fillText(\`مسقط أوتوكاد ذكي للأضلاع الأربعة (فوق:\${N}م | تحت:\${S}م | يمين:\${E}م | شمال:\${W}م)\`, canvas.width / 2, 28);
+}
+
+function exportCAD_DXF() {
+    if (!currentCADEntities.length) generateAICADPlan();
+    let dxf = "0\\nSECTION\\n2\\nENTITIES\\n";
+    currentCADEntities.forEach(e => {
+        const segs = [[e.mBL, e.mBR], [e.mBR, e.mTR], [e.mTR, e.mTL], [e.mTL, e.mBL]];
+        segs.forEach(s => {
+            dxf += \`0\\nLINE\\n8\\nWALLS\\n10\\n\${s[0].x.toFixed(3)}\\n20\\n\${s[0].y.toFixed(3)}\\n30\\n0.0\\n11\\n\${s[1].x.toFixed(3)}\\n21\\n\${s[1].y.toFixed(3)}\\n31\\n0.0\\n\`;
+        });
+        const cx = ((e.mBL.x + e.mBR.x + e.mTR.x + e.mTL.x) / 4).toFixed(2);
+        const cy = ((e.mBL.y + e.mBR.y + e.mTR.y + e.mTL.y) / 4).toFixed(2);
+        dxf += \`0\\nTEXT\\n8\\nDIMENSIONS\\n10\\n\${cx}\\n20\\n\${cy}\\n30\\n0.0\\n40\\n0.45\\n1\\n\${e.dim}\\n\`;
+    });
+    dxf += "0\\nENDSEC\\n0\\nEOF\\n";
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([dxf], { type: 'application/dxf' }));
+    a.download = "AutoCAD_4Sides_House.dxf";
+    a.click();
+}
+
+function exportSketchDXF() {
+    if (!currentSketchDXF.length) calculateAndDrawSketch();
+    let dxf = "0\\nSECTION\\n2\\nENTITIES\\n";
+    currentSketchDXF.forEach(l => {
+        dxf += \`0\\nLINE\\n8\\n\${l.layer}\\n10\\n\${l.x1.toFixed(3)}\\n20\\n\${l.y1.toFixed(3)}\\n30\\n0.0\\n11\\n\${l.x2.toFixed(3)}\\n21\\n\${l.y2.toFixed(3)}\\n31\\n0.0\\n\`;
+    });
+    dxf += "0\\nENDSEC\\n0\\nEOF\\n";
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([dxf], { type: 'application/dxf' }));
+    a.download = "Sketch_Subdivision.dxf";
+    a.click();
+}
+
+function downloadCanvas(id, name) {
+    const a = document.createElement('a');
+    a.download = name;
+    a.href = document.getElementById(id).toDataURL('image/png');
+    a.click();
+}
+
+// ================= الأداة 3: الخريطة التفاعلية =================
+function initMapIfNeeded() {
+    if (mapInitialized) return;
+    mapInitialized = true;
+    map = L.map('map').setView([28.1099, 30.7503], 14);
+    const sat = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 21 }).addTo(map);
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+    L.control.layers({ "قمر صناعي": sat, "خريطة شوارع": osm }, null, { position: 'topleft' }).addTo(map);
+    map.on('click', e => addVertex(e.latlng.lat, e.latlng.lng));
+}
+
+function latLngToUTM(lat, lng) {
+    const zone = Math.floor((lng + 180) / 6) + 1;
+    const utmProj = \`+proj=utm +zone=\${zone} \${lat >= 0 ? '+north' : '+south'} +datum=WGS84 +units=m +no_defs\`;
+    const [easting, northing] = proj4('EPSG:4326', utmProj, [lng, lat]);
+    return { easting, northing, zoneStr: \`\${zone}\${lat >= 0 ? 'N' : 'S'}\` };
+}
+
+function addVertex(lat, lng) {
+    points.push([lng, lat]);
+    const icon = L.divIcon({ className: 'vertex-marker', html: \`\${points.length}\`, iconSize: [22, 22], iconAnchor: [11, 11] });
+    const m = L.marker([lat, lng], { draggable: true, icon }).addTo(map);
+    m.on('drag', ev => {
+        const idx = markers.indexOf(m);
+        if (idx !== -1) {
+            const p = ev.target.getLatLng();
+            points[idx] = [p.lng, p.lat];
+            updateMapCalculations();
+        }
+    });
+    markers.push(m);
+    updateMapCalculations();
+}
+
+function updateMapCalculations() {
+    if (polygonLayer) map.removeLayer(polygonLayer);
+    if (polylineLayer) map.removeLayer(polylineLayer);
+    segmentLabels.forEach(l => map.removeLayer(l));
+    segmentLabels = [];
+
+    const tbody = document.getElementById('coords-table-body');
+    tbody.innerHTML = points.length ? points.map((p, i) => {
+        const u = latLngToUTM(p[1], p[0]);
+        return \`<tr><td><b>\${i+1}</b></td><td>\${u.easting.toFixed(2)}</td><td>\${u.northing.toFixed(2)}</td><td>\${u.zoneStr}</td></tr>\`;
+    }).join('') : '<tr><td colspan="4">اضغط على الخريطة لوضع النقاط</td></tr>';
+
+    if (points.length < 3) return;
+    const latLngs = points.map(p => [p[1], p[0]]);
+    polygonLayer = L.polygon(latLngs, { color: '#38bdf8', fillColor: '#0284c7', fillOpacity: 0.35 }).addTo(map);
+
+    let perim = 0;
+    for (let i = 0; i < points.length; i++) {
+        const p1 = points[i], p2 = points[(i + 1) % points.length];
+        const d = turf.distance(turf.point(p1), turf.point(p2), { units: 'meters' });
+        perim += d;
+        const lbl = L.marker([(p1[1]+p2[1])/2, (p1[0]+p2[0])/2], {
+            icon: L.divIcon({ className: 'segment-label', html: \`\${d.toFixed(2)} م\` }), interactive: false
+        }).addTo(map);
+        segmentLabels.push(lbl);
+    }
+
+    const area = turf.area(turf.polygon([[...points, points[0]]]));
+    document.getElementById('area-m2').innerText = area.toFixed(2) + ' م²';
+    document.getElementById('perimeter-m').innerText = perim.toFixed(2) + ' م';
+    const fqs = formatFQS(area);
+    document.getElementById('val-feddan').innerText = fqs.fed;
+    document.getElementById('val-qirat').innerText = fqs.qir;
+    document.getElementById('val-sahm').innerText = fqs.sah;
+}
+
+function undoLastPoint() { if (points.length) { points.pop(); map.removeLayer(markers.pop()); updateMapCalculations(); } }
+function clearMap() { points = []; markers.forEach(m => map.removeLayer(m)); markers = []; updateMapCalculations(); }
+function locateUser() { initMapIfNeeded(); map.locate({ setView: true, maxZoom: 19 }); }
+
+function exportCSV() {
+    if (!points.length) return alert("لا توجد نقاط!");
+    let csv = "data:text/csv;charset=utf-8,\\uFEFFPoint,Easting_X,Northing_Y,Zone,Lat,Lng\\n";
+    points.forEach((p, i) => {
+        const u = latLngToUTM(p[1], p[0]);
+        csv += \`\${i+1},\${u.easting.toFixed(3)},\${u.northing.toFixed(3)},\${u.zoneStr},\${p[1].toFixed(7)},\${p[0].toFixed(7)}\\n\`;
+    });
+    const a = document.createElement('a'); a.href = encodeURI(csv); a.download = "Survey_UTM.csv"; a.click();
+}
+
+// ================= الأداة 4: دفتر الميزانية (Leveling) =================
+let currentHI = null;
+function addLevelRow() {
+    const pt = document.getElementById('lvl-pt').value || 'نقطة';
+    const bs = parseFloat(document.getElementById('lvl-bs').value);
+    const is = parseFloat(document.getElementById('lvl-is').value);
+    const fs = parseFloat(document.getElementById('lvl-fs').value);
+    let rl = parseFloat(document.getElementById('lvl-rl').value);
+
+    let note = '';
+    if (currentHI === null && !isNaN(bs) && !isNaN(rl)) {
+        currentHI = rl + bs;
+        note = 'روبير بداية (BM)';
+    } else if (currentHI !== null) {
+        if (!isNaN(fs) && !isNaN(bs)) {
+            rl = currentHI - fs;
+            currentHI = rl + bs;
+            note = 'نقطة دوران (TP)';
+        } else if (!isNaN(is)) {
+            rl = currentHI - is;
+            note = 'نقطة متوسطة';
+        } else if (!isNaN(fs)) {
+            rl = currentHI - fs;
+            note = 'نقطة غلق';
+        }
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = \`<td><b>\${pt}</b></td><td>\${isNaN(bs)?'-':bs.toFixed(3)}</td><td>\${isNaN(is)?'-':is.toFixed(3)}</td><td>\${isNaN(fs)?'-':fs.toFixed(3)}</td><td>\${currentHI?currentHI.toFixed(3):'-'}</td><td><b>\${isNaN(rl)?'-':rl.toFixed(3)}</b></td><td>\${note}</td>\`;
+    document.getElementById('level-tbody').appendChild(tr);
+}
+
+function clearLevelTable() {
+    currentHI = null;
+    document.getElementById('level-tbody').innerHTML = '';
+}
+
+// ================= الأداة 5 و 6: COGO ومحول الوحدات =================
+function calculateCOGO() {
+    const e1 = parseFloat(document.getElementById('cogo-e1').value) || 0;
+    const n1 = parseFloat(document.getElementById('cogo-n1').value) || 0;
+    const e2 = parseFloat(document.getElementById('cogo-e2').value) || 0;
+    const n2 = parseFloat(document.getElementById('cogo-n2').value) || 0;
+    const dE = e2 - e1, dN = n2 - n1;
+    const dist = Math.hypot(dE, dN);
+    let az = Math.atan2(dE, dN) * (180 / Math.PI);
+    if (az < 0) az += 360;
+    const d = Math.floor(az), m = Math.floor((az - d) * 60), s = (((az - d) * 60 - m) * 60).toFixed(1);
+    document.getElementById('cogo-dist').innerText = dist.toFixed(3) + ' م';
+    document.getElementById('cogo-az-dms').innerText = \`\${d}° \${m}' \${s}"\`;
+    document.getElementById('cogo-de-dn').innerText = \`ΔE: \${dE.toFixed(2)} | ΔN: \${dN.toFixed(2)}\`;
+}
+
+function convertFromM2() {
+    const m2 = parseFloat(document.getElementById('conv-m2').value) || 0;
+    updateConvBoxes(m2);
+}
+
+function convertFromFQS() {
+    const f = parseFloat(document.getElementById('conv-f').value) || 0;
+    const q = parseFloat(document.getElementById('conv-q').value) || 0;
+    const s = parseFloat(document.getElementById('conv-s').value) || 0;
+    const m2 = (f * 4200.833333) + (q * 175.034722) + (s * 7.293113);
+    document.getElementById('conv-m2').value = m2.toFixed(3);
+    updateConvBoxes(m2);
+}
+
+function updateConvBoxes(m2) {
+    const fqs = formatFQS(m2);
+    document.getElementById('res-m2').innerText = m2.toFixed(2);
+    document.getElementById('res-fqs').innerText = \`\${fqs.fed}ف ، \${fqs.qir}ط ، \${fqs.sah}س\`;
+    document.getElementById('res-hec').innerText = (m2 / 10000).toFixed(4);
+    document.getElementById('res-qasaba').innerText = (m2 / 12.6025).toFixed(2);
+    document.getElementById('res-donum').innerText = (m2 / 1000).toFixed(3);
+}
+
+window.onload = function() {
+    setupAutoPersistence();
+    toggleSubdivMode();
+    calculateAndDrawSketch();
+    generateAICADPlan();
+};`;
+
+// ================= 4. محتوى ملف manifest.json =================
+const MANIFEST_JSON = `{
+  "name": "المسّاح الرقمي المتكامل - GIS & AutoCAD",
+  "short_name": "المسّاح الرقمي",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}`;
+
+// ================= 5. محتوى ملف sw.js =================
+const SW_JS = `const CACHE_NAME = 'surveyor-pwa-v1';
+const ASSETS = ['./index.html', './style.css', './app.js', './manifest.json'];
+
+self.addEventListener('install', event => {
+    event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+});
+
+self.addEventListener('fetch', event => {
+    event.respondWith(caches.match(event.request).then(res => res || fetch(event.request)));
+});`;
+
+const FILES_MAP = {
+    'index.html': INDEX_HTML,
+    'style.css': STYLE_CSS,
+    'app.js': APP_JS,
+    'manifest.json': MANIFEST_JSON,
+    'sw.js': SW_JS
+};
+
+function downloadSingle(filename) {
+    const content = FILES_MAP[filename];
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function downloadAllFiles() {
+    const names = Object.keys(FILES_MAP);
+    names.forEach((name, idx) => {
+        setTimeout(() => downloadSingle(name), idx * 350);
+    });
+}
+</script>
+</body>
+</html>
